@@ -1,0 +1,76 @@
+{
+	"name": "api",
+	"version": "0.0.1",
+	"description": "Invoice API (HTTP + WebSocket) and BullMQ worker",
+	"private": true,
+	"license": "MIT",
+	"type": "commonjs",
+	"scripts": {
+		"build": "nest build",
+		"dev": "nest start --watch --no-shell",
+		"dev:worker": "nest start --watch --no-shell --entryFile worker --path tsconfig.worker-dev.json",
+		"start": "node dist/main.js",
+		"start:worker": "node dist/worker.js",
+		"lint": "eslint . --fix --cache --max-warnings 0 --cache-location node_modules/.cache/.eslintcache",
+		"test": "NODE_OPTIONS=--experimental-vm-modules jest",
+		"test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+		"test:cov": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+		"test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --config ./test/jest-integration.json --runInBand",
+		"check:types": "tsc --noEmit",
+		"clean": "rm -rf node_modules dist dist-worker coverage .turbo"
+	},
+	"dependencies": {
+		"@nestjs/bullmq": "^12.0.2",
+		"@nestjs/common": "^12.6.0",
+		"@nestjs/config": "^12.1.1",
+		"@nestjs/core": "^12.6.0",
+		"@nestjs/platform-express": "^12.6.0",
+		"@repo/db": "workspace:*",
+		"@repo/shared": "workspace:*",
+		"@sentry/nestjs": "^11.17.0",
+		"bullmq": "^6.7.10",
+		"helmet": "^8.3.0",
+		"ioredis": "^6.1.0",
+		"nestjs-pino": "^5.3.2",
+		"pino": "^10.4.0",
+		"pino-http": "^11.0.0",
+		"reflect-metadata": "^0.2.2",
+		"rxjs": "^7.8.2",
+		"zod": "^4.6.7"
+	},
+	"devDependencies": {
+		"@nestjs/cli": "^12.0.15",
+		"@nestjs/schematics": "^12.0.16",
+		"@nestjs/testing": "^12.6.0",
+		"@repo/eslint-config": "workspace:*",
+		"@repo/typescript-config": "workspace:*",
+		"@types/express": "^5.0.6",
+		"@types/jest": "^30.0.0",
+		"@types/node": "^24.19.2",
+		"@types/supertest": "^7.2.1",
+		"eslint": "^9.39.5",
+		"jest": "^30.5.2",
+		"pino-pretty": "^13.2.0",
+		"supertest": "^7.3.2",
+		"ts-jest": "^29.4.15",
+		"typescript": "~6.0.3"
+	},
+	"jest": {
+		"moduleFileExtensions": [
+			"js",
+			"json",
+			"ts"
+		],
+		"rootDir": "src",
+		"testRegex": ".*\\.spec\\.ts$",
+		"transform": {
+			"^.+\\.ts$": "ts-jest"
+		},
+		"collectCoverageFrom": [
+			"**/*.ts",
+			"!**/*.spec.ts"
+		],
+		"coverageDirectory": "../coverage",
+		"testEnvironment": "node"
+	}
+}

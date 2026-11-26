@@ -1,0 +1,8 @@
+{
+	"//": "Dev only: lets `nest start --watch` run the worker next to the API without both watchers writing to dist/.",
+	"extends": "./tsconfig.build.json",
+	"compilerOptions": {
+		"outDir": "./dist-worker",
+		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.worker-dev.tsbuildinfo"
+	}
+}

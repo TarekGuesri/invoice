@@ -1,0 +1,45 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+    - type: markdown
+      attributes:
+          value: Don't attach real receipts, invoices or other personal data. Use made-up examples. Report security problems through SECURITY.md instead.
+    - type: textarea
+      id: what-happened
+      attributes:
+          label: What happened?
+          description: What you did, what you expected, and what happened instead.
+      validations:
+          required: true
+    - type: textarea
+      id: steps
+      attributes:
+          label: Steps to reproduce
+          placeholder: |
+              1. Go to ...
+              2. Click ...
+              3. See ...
+      validations:
+          required: true
+    - type: dropdown
+      id: where
+      attributes:
+          label: Where does it happen?
+          options:
+              - Hosted instance
+              - Self-hosted
+              - Local development
+      validations:
+          required: true
+    - type: input
+      id: version
+      attributes:
+          label: Version or commit
+          description: The release tag, or the `version` field from `GET /api/v1/health`.
+    - type: textarea
+      id: logs
+      attributes:
+          label: Logs or screenshots
+          description: Remove tokens, connection strings and personal data first.
+          render: shell

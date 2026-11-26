@@ -1,0 +1,150 @@
+name: Deploy
+
+# Runs after CI passes on main. Can also be started by hand to redeploy.
+on:
+    workflow_run:
+        workflows: [CI]
+        types: [completed]
+        branches: [main]
+    workflow_dispatch:
+
+concurrency:
+    group: deploy-production
+    cancel-in-progress: false
+
+permissions:
+    contents: read
+
+env:
+    REGION: europe-west1
+    SERVICE: invoice-api
+    AR_IMAGE: europe-west1-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/invoice/api
+    WORKER_VM: ${{ vars.WORKER_VM }}
+    WORKER_ZONE: ${{ vars.WORKER_ZONE }}
+    API_HEALTH_URL: https://api.invoice.tariqguesri.com/api/v1/health
+
+jobs:
+    deploy:
+        name: Build image, migrate, deploy API and worker
+        if: >-
+            github.event_name == 'workflow_dispatch' ||
+            (github.event.workflow_run.conclusion == 'success' &&
+             github.event.workflow_run.event == 'push')
+        runs-on: ubuntu-latest
+        environment:
+            name: production
+            url: https://invoice.tariqguesri.com
+        permissions:
+            contents: read
+            id-token: write # Workload Identity Federation
+            packages: write # push to GHCR
+        env:
+            SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  ref: ${{ env.SHA }}
+
+            - name: Set GHCR image name
+              # GHCR names must be lowercase.
+              run: echo "GHCR_IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/invoice-api" >> "$GITHUB_ENV"
+
+            - uses: google-github-actions/auth@v3
+              with:
+                  workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+                  service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+            - uses: google-github-actions/setup-gcloud@v3
+
+            - run: gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
+
+            - uses: docker/login-action@v4
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            - uses: docker/setup-buildx-action@v4
+
+            # Cloud Run pulls from Artifact Registry (same region). The worker VM
+            # pulls from GHCR, because cross-region pulls from AR are billed.
+            - name: Build and push image
+              uses: docker/build-push-action@v7
+              with:
+                  context: .
+                  file: apps/api/Dockerfile
+                  push: true
+                  provenance: false
+                  build-args: APP_VERSION=${{ env.SHA }}
+                  tags: |
+                      ${{ env.AR_IMAGE }}:${{ env.SHA }}
+                      ${{ env.GHCR_IMAGE }}:${{ env.SHA }}
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: 24
+
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version-file: package.json
+
+            - run: bun install --frozen-lockfile
+
+            # Runs before any rollout; a failed migration stops the deploy.
+            - name: Run database migrations
+              run: bun run db:deploy
+              env:
+                  DATABASE_URL: ${{ secrets.DATABASE_DIRECT_URL }}
+
+            # Runtime env vars and secrets are set on the service once (see
+            # docs/deployment.md). `gcloud run deploy` keeps them between revisions.
+            - name: Deploy API to Cloud Run
+              run: |
+                  gcloud run deploy "$SERVICE" \
+                    --image "$AR_IMAGE:$SHA" \
+                    --region "$REGION" \
+                    --port 8080 \
+                    --cpu 1 \
+                    --memory 512Mi \
+                    --cpu-boost \
+                    --min-instances 0 \
+                    --max-instances 1 \
+                    --timeout 3600 \
+                    --session-affinity \
+                    --allow-unauthenticated \
+                    --quiet
+
+            - name: Deploy worker to VM
+              run: |
+                  gcloud compute scp infra/vm/docker-compose.worker.yml \
+                    "$WORKER_VM":/tmp/docker-compose.worker.yml \
+                    --zone "$WORKER_ZONE" --tunnel-through-iap --quiet
+                  gcloud compute ssh "$WORKER_VM" \
+                    --zone "$WORKER_ZONE" --tunnel-through-iap --quiet \
+                    --command "sudo WORKER_IMAGE='$GHCR_IMAGE:$SHA' bash -s" \
+                    < infra/vm/deploy-worker.sh
+
+            - name: Smoke test API
+              run: |
+                  for attempt in $(seq 1 12); do
+                    body=$(curl -fsS --max-time 15 "$API_HEALTH_URL" || true)
+                    if echo "$body" | jq -e --arg sha "$SHA" '.status == "ok" and .version == $sha' > /dev/null; then
+                      echo "API healthy on $SHA"
+                      exit 0
+                    fi
+                    echo "Attempt $attempt: not ready yet"
+                    sleep 10
+                  done
+                  echo "Last response: $body"
+                  exit 1
+
+            - name: Smoke test worker
+              run: |
+                  sleep 15
+                  state=$(gcloud compute ssh "$WORKER_VM" \
+                    --zone "$WORKER_ZONE" --tunnel-through-iap --quiet \
+                    --command "sudo docker inspect -f '{{.State.Running}} {{.State.Restarting}}' invoice-worker")
+                  echo "Worker running/restarting: $state"
+                  test "$state" = "true false"

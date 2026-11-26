@@ -1,0 +1,39 @@
+{
+	"name": "@repo/db",
+	"private": true,
+	"type": "commonjs",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"db:generate": "prisma generate",
+		"db:migrate": "prisma migrate dev",
+		"db:deploy": "prisma migrate deploy",
+		"db:studio": "prisma studio",
+		"build": "tsc -p tsconfig.build.json",
+		"lint": "eslint . --fix --cache --max-warnings 0 --cache-location node_modules/.cache/.eslintcache",
+		"check:types": "tsc --noEmit",
+		"clean": "rm -rf node_modules dist src/generated .turbo"
+	},
+	"dependencies": {
+		"@prisma/adapter-pg": "7.10.1",
+		"@prisma/client": "7.10.1"
+	},
+	"devDependencies": {
+		"@repo/eslint-config": "workspace:*",
+		"@repo/typescript-config": "workspace:*",
+		"@types/node": "^24.10.0",
+		"dotenv": "^17.2.3",
+		"eslint": "^9.39.5",
+		"prisma": "7.10.1",
+		"typescript": "~6.0.3"
+	}
+}

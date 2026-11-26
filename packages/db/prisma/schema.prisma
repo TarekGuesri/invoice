@@ -1,0 +1,12 @@
+// Models arrive with Milestone 1 (auth). Until then the schema only declares
+// the datasource and generator so the migration pipeline can run end to end.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}

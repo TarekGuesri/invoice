@@ -1,0 +1,41 @@
+{
+	"name": "@repo/shared",
+	"type": "module",
+	"private": true,
+	"exports": {
+		".": {
+			"import": {
+				"types": "./dist/index.d.ts",
+				"default": "./dist/index.js"
+			},
+			"require": {
+				"types": "./dist/index.d.cts",
+				"default": "./dist/index.cjs"
+			}
+		}
+	},
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"dev": "bunchee --watch",
+		"build": "bunchee",
+		"lint": "eslint . --fix --cache --max-warnings 0 --cache-location node_modules/.cache/.eslintcache",
+		"check:types": "tsc --noEmit",
+		"clean": "rm -rf node_modules dist .turbo"
+	},
+	"peerDependencies": {
+		"zod": "^4.6.7"
+	},
+	"devDependencies": {
+		"@repo/eslint-config": "workspace:*",
+		"@repo/typescript-config": "workspace:*",
+		"bunchee": "^7.1.0",
+		"eslint": "^9.39.5",
+		"typescript": "~6.0.3",
+		"zod": "^4.6.7"
+	}
+}

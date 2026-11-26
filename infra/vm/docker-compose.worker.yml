@@ -1,0 +1,20 @@
+# Runs on the e2-micro VM. The deploy workflow copies this file to
+# /opt/invoice and starts it with WORKER_IMAGE set to the commit's image.
+
+services:
+    worker:
+        image: ${WORKER_IMAGE:?WORKER_IMAGE is required}
+        container_name: invoice-worker
+        command: ['node', 'dist/worker.js']
+        init: true
+        restart: unless-stopped
+        env_file: /opt/invoice/worker.env
+        # The VM has 1 GB of RAM; leave room for Docker and the OS.
+        mem_limit: 700m
+        # Lets in-flight jobs finish after SIGTERM before Docker kills the process.
+        stop_grace_period: 90s
+        logging:
+            driver: json-file
+            options:
+                max-size: 10m
+                max-file: '3'

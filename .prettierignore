@@ -1,0 +1,9 @@
+node_modules
+dist
+.next
+.turbo
+bun.lock
+coverage
+**/src/generated
+**/next-env.d.ts
+.cursor/specs

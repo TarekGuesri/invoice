@@ -1,0 +1,11 @@
+{
+	"extends": "@repo/typescript-config/nestjs.json",
+	"compilerOptions": {
+		"outDir": "./dist",
+		"rootDir": ".",
+		"types": ["node", "jest"],
+		"strictPropertyInitialization": false,
+		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo"
+	},
+	"include": ["src", "test"]
+}

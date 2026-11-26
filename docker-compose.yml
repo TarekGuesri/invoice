@@ -1,0 +1,94 @@
+# Local development services. `docker compose up -d` starts Postgres, Redis
+# and S3-compatible storage. `docker compose --profile app up -d --build`
+# also runs the API and worker from the production Dockerfile.
+
+name: invoice
+
+services:
+    postgres:
+        image: postgres:17-alpine
+        environment:
+            POSTGRES_USER: invoice
+            POSTGRES_PASSWORD: invoice
+            POSTGRES_DB: invoice
+        ports:
+            - '${POSTGRES_PORT:-5432}:5432'
+        volumes:
+            - postgres-data:/var/lib/postgresql/data
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U invoice -d invoice']
+            interval: 5s
+            timeout: 3s
+            retries: 10
+
+    redis:
+        image: redis:7.4-alpine
+        # Matches production: BullMQ requires Redis never to evict keys.
+        command: ['redis-server', '--maxmemory-policy', 'noeviction']
+        ports:
+            - '${REDIS_PORT:-6379}:6379'
+        volumes:
+            - redis-data:/data
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            interval: 5s
+            timeout: 3s
+            retries: 10
+
+    # MinIO no longer publishes community images; Chainguard builds it from
+    # source. Production uses Cloudflare R2 through the same S3 API.
+    minio:
+        image: cgr.dev/chainguard/minio:latest
+        command: ['server', '/data', '--console-address', ':9001']
+        user: root
+        environment:
+            MINIO_ROOT_USER: minio
+            MINIO_ROOT_PASSWORD: minio123
+        ports:
+            - '9000:9000'
+            - '9001:9001'
+        volumes:
+            - minio-data:/data
+
+    minio-init:
+        image: cgr.dev/chainguard/minio-client:latest
+        command: ['mb', '--ignore-existing', 'local/invoice']
+        environment:
+            MC_HOST_local: http://minio:minio123@minio:9000
+        depends_on:
+            - minio
+        restart: on-failure
+
+    api:
+        profiles: ['app']
+        build:
+            context: .
+            dockerfile: apps/api/Dockerfile
+        image: invoice-api:local
+        environment: &app-env
+            NODE_ENV: production
+            WEB_ORIGIN: http://localhost:3000
+            DATABASE_URL: postgresql://invoice:invoice@postgres:5432/invoice
+            REDIS_URL: redis://redis:6379
+        ports:
+            - '8080:8080'
+        depends_on:
+            postgres:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+
+    worker:
+        profiles: ['app']
+        image: invoice-api:local
+        command: ['node', 'dist/worker.js']
+        init: true
+        environment: *app-env
+        depends_on:
+            api:
+                condition: service_started
+
+volumes:
+    postgres-data:
+    redis-data:
+    minio-data:

@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Testing
+coverage
+
+# Turbo
+.turbo
+
+# Vercel
+.vercel
+
+# Build outputs
+.next/
+out/
+build
+dist
+*.tsbuildinfo
+next-env.d.ts
+
+# Prisma generated client
+packages/db/src/generated
+
+# Debug
+npm-debug.log*
+
+# Misc
+.DS_Store
+*.pem
+
+.cursor/specs
+
+# Production env files for infra/
+infra/**/api.env.yaml
+infra/**/worker.env
