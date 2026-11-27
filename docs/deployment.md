@@ -24,7 +24,7 @@ Production runs entirely on free tiers. This document is the one-time provisioni
     6. Smoke tests: `GET /api/v1/health` must return `status: ok` **and** the new commit SHA as `version`; the worker container must be running.
 3. Vercel deploys the web app through its GitHub integration. `turbo-ignore` skips the build when nothing the web app depends on changed.
 
-To redeploy without a new commit, run the Deploy workflow by hand (Actions → Deploy → Run workflow).
+To redeploy without a new commit, run the Deploy workflow by hand from `main` (Actions → Deploy → Run workflow). Runs started from any other branch are skipped.
 
 ## One-time provisioning
 
@@ -106,14 +106,14 @@ done
 gcloud iam service-accounts add-iam-policy-binding "$API_RUNTIME" \
   --member="serviceAccount:$DEPLOYER" --role=roles/iam.serviceAccountUser
 
-# Only workflows from this repository can impersonate the deployer.
+# Only workflows from this repository's main branch can impersonate the deployer.
 gcloud iam workload-identity-pools create github \
   --location=global --display-name="GitHub Actions"
 gcloud iam workload-identity-pools providers create-oidc invoice-repo \
   --location=global --workload-identity-pool=github \
   --issuer-uri="https://token.actions.githubusercontent.com" \
   --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref" \
-  --attribute-condition="assertion.repository == '$GITHUB_REPO'"
+  --attribute-condition="assertion.repository == '$GITHUB_REPO' && assertion.ref == 'refs/heads/main'"
 gcloud iam service-accounts add-iam-policy-binding "$DEPLOYER" \
   --role=roles/iam.workloadIdentityUser \
   --member="principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github/attribute.repository/$GITHUB_REPO"
@@ -133,7 +133,9 @@ gcloud run deploy invoice-api \
 rm infra/gcp/api.env.yaml
 ```
 
-To change an env var later: `gcloud run services update invoice-api --region="$REGION" --update-env-vars KEY=value`.
+`JWT_ACCESS_SECRET` signs access tokens. Generate it with `openssl rand -base64 48`; rotating it logs everyone out within 15 minutes (refresh tokens are stored in the database and keep working). The worker doesn't need it.
+
+To change an env var later: `gcloud run services update invoice-api --region="$REGION" --update-env-vars KEY=value`. Add a variable the new code requires **before** merging that code, or the new revision fails to start and the deploy's smoke test fails.
 
 **Custom domain.** Web and API must share the site `tariqguesri.com` so `sameSite=lax` auth cookies work (see [ADR 0001](adr/0001-hosting.md)).
 
@@ -188,7 +190,7 @@ sudo nano /opt/invoice/worker.env      # same values as the API (see worker.env.
 | `WORKER_VM`                      | `invoice-worker`                                                                                |
 | `WORKER_ZONE`                    | `us-east1-b`                                                                                    |
 
-**Environment `production`** (Settings → Environments), secret `DATABASE_DIRECT_URL` = Neon's direct connection string.
+**Environment `production`** (Settings → Environments): secret `DATABASE_DIRECT_URL` = Neon's direct connection string, and **Deployment branches** limited to `main`. Together with the Workload Identity condition above and the workflow's own check, only `main` can deploy.
 
 **Branch protection** on `main`: require the CI checks _Format, spelling, types, lint, unit tests, build_ and _Integration tests_ to pass.
 

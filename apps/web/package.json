@@ -12,11 +12,13 @@
 		"clean": "rm -rf node_modules .next .turbo"
 	},
 	"dependencies": {
+		"@hookform/resolvers": "^7.0.9",
 		"@repo/shared": "workspace:*",
 		"@tanstack/react-query": "^5.108.4",
 		"next": "^16.4.6",
 		"react": "^19.3.1",
 		"react-dom": "^19.3.1",
+		"react-hook-form": "^7.92.0",
 		"zod": "^4.6.7"
 	},
 	"devDependencies": {

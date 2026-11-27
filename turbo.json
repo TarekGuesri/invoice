@@ -27,7 +27,8 @@
 				"DATABASE_URL",
 				"REDIS_URL",
 				"WEB_ORIGIN",
-				"NODE_ENV"
+				"NODE_ENV",
+				"JWT_ACCESS_SECRET"
 			]
 		},
 		"db:migrate": {

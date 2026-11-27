@@ -20,6 +20,8 @@ coverage
 out/
 build
 dist
+# Dev-only worker output (apps/api/tsconfig.worker-dev.json)
+dist-worker
 *.tsbuildinfo
 next-env.d.ts
 
@@ -34,6 +36,9 @@ npm-debug.log*
 *.pem
 
 .cursor/specs
+
+# Local Claude Code preview config
+.claude/launch.json
 
 # Production env files for infra/
 infra/**/api.env.yaml

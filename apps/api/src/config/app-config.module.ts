@@ -1,15 +1,17 @@
-import { Module } from '@nestjs/common'
+import { DynamicModule, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 
-import { validateEnv } from './env'
-
-@Module({
-	imports: [
-		ConfigModule.forRoot({
-			isGlobal: true,
-			cache: true,
-			validate: validateEnv,
-		}),
-	],
-})
-export class AppConfigModule {}
+@Module({})
+export class AppConfigModule {
+	/** The API and the worker each validate only the variables they use. */
+	static forRoot(
+		validate: (config: Record<string, unknown>) => Record<string, unknown>
+	): DynamicModule {
+		return {
+			module: AppConfigModule,
+			imports: [
+				ConfigModule.forRoot({ isGlobal: true, cache: true, validate }),
+			],
+		}
+	}
+}

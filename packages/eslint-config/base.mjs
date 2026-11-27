@@ -33,6 +33,7 @@ export default defineConfig([
 		ignores: [
 			'**/node_modules',
 			'**/dist',
+			'**/dist-worker',
 			'**/build',
 			'**/.next',
 			'**/coverage',

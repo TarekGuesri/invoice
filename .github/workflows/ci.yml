@@ -81,6 +81,8 @@ jobs:
             DATABASE_URL: postgresql://invoice:invoice@localhost:5432/invoice
             REDIS_URL: redis://localhost:6379
             WEB_ORIGIN: http://localhost:3000
+            # Test-only value; production's lives on the Cloud Run service.
+            JWT_ACCESS_SECRET: ci-only-secret-not-used-anywhere-else
         steps:
             - uses: actions/checkout@v7
 
