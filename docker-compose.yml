@@ -70,6 +70,7 @@ services:
             WEB_ORIGIN: http://localhost:3000
             DATABASE_URL: postgresql://invoice:invoice@postgres:5432/invoice
             REDIS_URL: redis://redis:6379
+            JWT_ACCESS_SECRET: local-dev-secret-change-me-at-least-32-chars
         ports:
             - '8080:8080'
         depends_on:
