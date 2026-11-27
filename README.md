@@ -8,7 +8,7 @@
 
 **Hosted instance:** [invoice.tariqguesri.com](https://invoice.tariqguesri.com) · **API health:** [api.invoice.tariqguesri.com/api/v1/health](https://api.invoice.tariqguesri.com/api/v1/health)
 
-> **Early development.** Invoice is not ready for real bookkeeping yet: only the foundation (Milestone 0) is in place so far. The hosted instance runs on the Gemini free tier, so don't upload real financial documents to it.
+> **Early development.** Invoice is not ready for real bookkeeping yet: the foundation (Milestone 0, [`v0.0.1`](https://github.com/TarekGuesri/invoice/releases/tag/v0.0.1)) is released and accounts (Milestone 1) are in progress. The hosted instance runs on the Gemini free tier, so don't upload real financial documents to it.
 
 ## Features
 
@@ -25,8 +25,8 @@ Each milestone ships as a tagged release and is deployed to the hosted instance.
 
 | Milestone                         | Scope                                                                                   |
 | --------------------------------- | --------------------------------------------------------------------------------------- |
-| **M0: Foundation** (in progress)  | Landing page, `GET /api/v1/health` (DB + Redis + worker heartbeat), CI/CD to production |
-| M1: Auth                          | Register, log in, refresh, log out                                                      |
+| M0: Foundation (released)         | Landing page, `GET /api/v1/health` (DB + Redis + worker heartbeat), CI/CD to production |
+| **M1: Auth** (in progress)        | Register, log in, refresh, log out                                                      |
 | M2: Extraction pipeline           | Upload → queue → Gemini → review rules                                                  |
 | M3: Real-time + review            | Live status over WebSockets, review screen                                              |
 | M4: Dashboard, export, GDPR, demo | Charts, CSV and data export, account deletion, a demo account with sample data          |
