@@ -106,3 +106,46 @@ jobs:
               run: bun run db:deploy
 
             - run: bun x turbo run test:integration
+
+    # Local runs and the jobs above use the full dev install, so they can't
+    # see what's missing from the production image. Deploy builds the same
+    # Dockerfile, so a broken image fails here instead of on Cloud Run.
+    image:
+        name: Docker image starts
+        runs-on: ubuntu-latest
+        services:
+            postgres:
+                image: postgres:17-alpine
+                env:
+                    POSTGRES_USER: invoice
+                    POSTGRES_PASSWORD: invoice
+                    POSTGRES_DB: invoice
+                ports: ['5432:5432']
+                options: >-
+                    --health-cmd "pg_isready -U invoice -d invoice"
+                    --health-interval 5s --health-timeout 3s --health-retries 10
+            redis:
+                image: redis:7.4-alpine
+                ports: ['6379:6379']
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 5s --health-timeout 3s --health-retries 10
+        steps:
+            - uses: actions/checkout@v7
+
+            - uses: docker/setup-buildx-action@v4
+
+            # Shares the layer cache with Deploy, which builds the same file.
+            - name: Build API image
+              uses: docker/build-push-action@v7
+              with:
+                  context: .
+                  file: apps/api/Dockerfile
+                  load: true
+                  provenance: false
+                  tags: invoice-api:ci
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+
+            - name: Start API and worker
+              run: infra/ci/check-image.sh invoice-api:ci

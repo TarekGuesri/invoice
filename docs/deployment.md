@@ -192,7 +192,7 @@ sudo nano /opt/invoice/worker.env      # same values as the API (see worker.env.
 
 **Environment `production`** (Settings → Environments): secret `DATABASE_DIRECT_URL` = Neon's direct connection string, and **Deployment branches** limited to `main`. Together with the Workload Identity condition above and the workflow's own check, only `main` can deploy.
 
-**Branch protection** on `main`: require the CI checks _Format, spelling, types, lint, unit tests, build_ and _Integration tests_ to pass.
+**Branch protection** on `main`: require the CI checks _Format, spelling, types, lint, unit tests, build_, _Integration tests_ and _Docker image starts_ to pass. The last one builds the production image and starts the API and worker from it ([`infra/ci/check-image.sh`](../infra/ci/check-image.sh)), so a broken image fails in the PR instead of on Cloud Run.
 
 **GHCR visibility.** The first deploy pushes `ghcr.io/tarekguesri/invoice-api` as a private package, so that run's worker step fails because the VM can't pull it. Open the package (GitHub profile → Packages → invoice-api → Package settings), change visibility to **Public**, then re-run the workflow. A public package lets the VM pull without stored credentials.
 
