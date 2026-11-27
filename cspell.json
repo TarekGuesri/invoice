@@ -11,6 +11,7 @@
 		"bun.lock",
 		"*.svg",
 		"**/src/generated/**",
+		"**/prisma/migrations/**",
 		".cursor/specs",
 		".gitignore"
 	],
